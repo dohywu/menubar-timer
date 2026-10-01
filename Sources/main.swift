@@ -1,5 +1,6 @@
 import Cocoa
 import ServiceManagement
+import UserNotifications
 
 // MARK: - Duration parsing
 
@@ -52,7 +53,7 @@ func formatTime(_ interval: TimeInterval) -> String {
 
 // MARK: - App
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSTextFieldDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSTextFieldDelegate, UNUserNotificationCenterDelegate {
     private var statusItem: NSStatusItem!
     private let menu = NSMenu()
     private let field = NSTextField()
@@ -74,6 +75,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSText
         buildMenu()
         statusItem.menu = menu
         render()
+
+        UNUserNotificationCenter.current().delegate = self
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in
+            // Best-effort. If denied, the alarm still shows via the on-screen
+            // panel below — Notification Center is a bonus, not a dependency.
+        }
+    }
+
+    // No banner popup — it should only land quietly in Notification Center
+    // (.list). The looping alarm sound already gets attention; a banner on
+    // top would just be a second, redundant popup.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.list])
     }
 
     private func buildMenu() {
@@ -245,14 +263,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSText
         alarm?.loops = true
         alarm?.play()
 
-        postFinishedNotification()
+        postToNotificationCenter()
     }
 
-    private func postFinishedNotification() {
-        let note = NSUserNotification()
-        note.title = "⏰ 타이머 종료"
-        note.informativeText = "메뉴에서 \"알람 끄기\"를 누르면 소리가 멈춰요."
-        NSUserNotificationCenter.default.deliver(note)
+    // Files a real system notification so the alarm shows up in 알림센터
+    // (Notification Center) and sticks around in its history. Sound is left
+    // off here: the looping alarm already covers that, and stacking the
+    // default notification sound on top of it would be redundant.
+    private func postToNotificationCenter() {
+        let content = UNMutableNotificationContent()
+        content.title = "⏰ 타이머 종료"
+        content.body = "설정한 시간이 끝났어요. 메뉴에서 \"알람 끄기\"를 누르면 소리가 멈춰요."
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
     }
 
     private func stopAlarm() {
