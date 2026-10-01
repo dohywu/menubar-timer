@@ -1,8 +1,10 @@
 #!/bin/bash
 # Builds MenubarTimer.app into ./build
+# Usage: ./build.sh [version]   (default: 1.0.0)
 set -euo pipefail
 cd "$(dirname "$0")"
 
+VERSION="${1:-1.0.0}"
 APP="build/MenubarTimer.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
@@ -43,7 +45,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>com.dohywu.menubartimer</string>
   <key>CFBundleExecutable</key><string>MenubarTimer</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
+  <key>CFBundleVersion</key><string>$VERSION</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
 </dict>
@@ -51,4 +54,4 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 codesign --force --sign - "$APP" >/dev/null 2>&1 || true
-echo "Built $APP"
+echo "Built $APP (v$VERSION)"
