@@ -1,5 +1,7 @@
 # MenubarTimer
 
+<img src="ICON/MenubarTimer.icon/Assets/Untitled.png" width="128" alt="MenubarTimer icon">
+
 A tiny macOS menu bar countdown timer. Click the timer icon, type a duration, press Enter — the remaining time shows in the menu bar.
 
 ## Download
